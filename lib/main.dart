@@ -6,6 +6,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -13,13 +15,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,  
       ),
-      home: MyHomePage(),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key? key}) : super(key: key);
+  const MyHomePage({super.key});
 
   @override
   _MyHomePageState createState() => _MyHomePageState(); 
@@ -55,12 +57,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('LoLoPedia'),
+        title: const Text('LoLoPedia'),
       ),
       body: Column(
         children: [
           Padding(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
             child: TextFormField(
               onChanged: (value) {
                 setState(() {
@@ -76,8 +78,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 return ListTile(
                   leading: CachedNetworkImage(
                     imageUrl: "http://ddragon.leagueoflegends.com/cdn/14.2.1/img/champion/${filteredChamps[index]}.png",
-                    placeholder: (context, url) => CircularProgressIndicator(),
-                    errorWidget: (context, url, error) => Icon(Icons.error),
+                    placeholder: (context, url) => const CircularProgressIndicator(),
+                    errorWidget: (context, url, error) => const Icon(Icons.error),
                   ),
                   title: Text(filteredChamps[index]),
                   onTap: () {
@@ -96,15 +98,147 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class DetailPage extends StatelessWidget {
 
-  final String champ;
-  
-  DetailPage({required this.champ});
+  final String champ; 
+
+  const DetailPage({super.key, required this.champ});
+
+    Future<Map> getChampDetails() async {
+    final response = await http.get(Uri.parse('https://ddragon.leagueoflegends.com/cdn/14.2.1/data/en_US/champion/$champ.json'));
+    return jsonDecode(response.body)['data'][champ]; 
+  }
+
+    @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: FutureBuilder(
+        future: getChampDetails(),  
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+
+            Map data = snapshot.data as Map;
+
+            return ListView(
+              children: [
+
+                // Image scrolls  
+                Image.network(
+                  "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champ}_0.jpg",
+                  height: 300,
+                  width: double.infinity,
+                  fit: BoxFit.cover
+                ),
+
+                // Title & Tags underneath image
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    children: [
+                      Text(data['name'],
+                        style: const TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold  
+                        )
+                      ),
+                      Wrap(
+                        spacing: 8,
+                        children: data['tags'].map<Widget>((tag) {
+                          return Chip(label: Text(tag));
+                        }).toList(),
+                      )  
+                    ] 
+                  )
+                ),
+
+                // Lore
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(data['lore'], style: const TextStyle(fontSize: 18)),
+                ),
+              
+                const SizedBox(height: 40),
+
+                // Spells
+                SpellSection(
+                 spells: data['spells'],
+                 passive: data['passive']
+                )
+              ],
+            );
+
+          } else {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+        },  
+      ),
+    );
+  }
+}
+
+
+class SpellSection extends StatelessWidget {
+
+  final List spells;
+  final Map passive;
+
+  const SpellSection({super.key,
+    required this.spells,
+    required this.passive 
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(champ)),
-      body: Center(child: Text('Champ details here!')), 
+    return Column(
+      children: [
+
+        ListTile(
+          leading: Image.network(
+            "https://ddragon.leagueoflegends.com/cdn/14.2.1/img/passive/${passive['image']['full']}",
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const CircularProgressIndicator();
+            },
+          ),
+          title: Text("(P) ${passive['name']}"),
+          subtitle: Text(passive['description']),
+        ),
+
+        ...spells.map((spell) {
+          int spellIndex = spells.indexOf(spell);
+          String spellKey = "";
+          switch (spellIndex) {
+            case 0:
+              spellKey = "Q";
+              break;
+            case 1:
+              spellKey = "W";
+              break;
+            case 2:
+              spellKey = "E";
+              break;
+            case 3:
+              spellKey = "R";
+              break;
+          }
+
+          return ListTile(
+            leading: Image.network(
+              "https://ddragon.leagueoflegends.com/cdn/14.2.1/img/spell/${spell['id']}.png",
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const CircularProgressIndicator();
+              },
+            ),
+            title: Text(
+              "(${spellKey}) ${spell['name']}"
+            ),
+            subtitle: Text(spell['description']),
+          );
+        })
+
+      ],
     );
   }
+
 }
