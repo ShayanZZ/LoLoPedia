@@ -81,7 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       return ListTile(
                         leading: CachedNetworkImage(
                           imageUrl:
-                              "http://ddragon.leagueoflegends.com/cdn/14.2.1/img/champion/${filteredChamps[index]}.png",
+                              "https://ddragon.leagueoflegends.com/cdn/14.2.1/img/champion/${filteredChamps[index]}.png",
                           placeholder: (context, url) =>
                               const CircularProgressIndicator(),
                           errorWidget: (context, url, error) =>
