@@ -3,7 +3,24 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 
-void main() => runApp(const MyApp());
+String currentVersion = '14.12.1';
+Future<void> updateApiUrl() async {
+  try {
+    final response = await http.get(Uri.parse('https://ddragon.leagueoflegends.com/api/versions.json'));
+    if (response.statusCode == 200) {
+      List versions = jsonDecode(response.body);
+      currentVersion = versions[0];
+    }
+  } catch (e) {
+    print('Failed to fetch latest version: $e');
+  }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await updateApiUrl();
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -40,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> getChamps() async {
     final response = await http.get(Uri.parse(
-        'https://ddragon.leagueoflegends.com/cdn/14.2.1/data/en_US/champion.json'));
+        'https://ddragon.leagueoflegends.com/cdn/$currentVersion/data/en_US/champion.json'));
 
     if (response.statusCode == 200) {
       setState(() {
@@ -81,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       return ListTile(
                         leading: CachedNetworkImage(
                           imageUrl:
-                              "https://ddragon.leagueoflegends.com/cdn/14.2.1/img/champion/${filteredChamps[index]}.png",
+                              "https://ddragon.leagueoflegends.com/cdn/$currentVersion/img/champion/${filteredChamps[index]}.png",
                           placeholder: (context, url) =>
                               const CircularProgressIndicator(),
                           errorWidget: (context, url, error) =>
@@ -113,7 +130,7 @@ class DetailPage extends StatelessWidget {
 
   Future<Map> getChampDetails() async {
     final response = await http.get(Uri.parse(
-        'https://ddragon.leagueoflegends.com/cdn/14.2.1/data/en_US/champion/$champ.json'));
+        'https://ddragon.leagueoflegends.com/cdn/$currentVersion/data/en_US/champion/$champ.json'));
     return jsonDecode(response.body)['data'][champ];
   }
 
@@ -203,7 +220,7 @@ class SpellSection extends StatelessWidget {
       children: [
         ListTile(
           leading: Image.network(
-            "https://ddragon.leagueoflegends.com/cdn/14.2.1/img/passive/${passive['image']['full']}",
+            "https://ddragon.leagueoflegends.com/cdn/$currentVersion/img/passive/${passive['image']['full']}",
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;
               return const CircularProgressIndicator();
@@ -232,7 +249,7 @@ class SpellSection extends StatelessWidget {
 
           return ListTile(
             leading: Image.network(
-              "https://ddragon.leagueoflegends.com/cdn/14.2.1/img/spell/${spell['id']}.png",
+              "https://ddragon.leagueoflegends.com/cdn/$currentVersion/img/spell/${spell['id']}.png",
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return const CircularProgressIndicator();
