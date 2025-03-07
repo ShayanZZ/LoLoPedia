@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 
-String currentVersion = '14.12.1';
+String currentVersion = '15.5.1';
 Future<void> updateApiUrl() async {
   try {
     final response = await http.get(Uri.parse('https://ddragon.leagueoflegends.com/api/versions.json'));
